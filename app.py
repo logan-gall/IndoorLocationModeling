@@ -122,6 +122,9 @@ unique_locations = data[['Location_X', 'Location_Y']].drop_duplicates()
 app = dash.Dash(__name__)
 app.title = "Wi-Fi Signal Strength Dashboard with NN Predictions"
 
+# Expose the Flask server for Gunicorn
+server = app.server  # <--- Important: Define 'server' for Gunicorn
+
 # Mapping of BSSID to frequency for annotations
 bssid_freq = {
     "70:3A:0E:60:E8:E0": "2.4 GHz",
@@ -351,7 +354,7 @@ def update_signal_strength(clickData):
     # -------------------------------
     # Displaying Predicted Locations on the Map
     # -------------------------------
-    # Find indices in y_test that match the selected location
+    # Find indices in y that match the selected location
     selected_indices = y[
         (y['Location_X'] == selected_x) &
         (y['Location_Y'] == selected_y)
