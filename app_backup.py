@@ -1,12 +1,10 @@
-# app.py
-
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import tensorflow as tf
-from tensorflow.keras.models import load_model
-import joblib  # For loading the scaler
+from tensorflow.keras import layers, models, regularizers
 import dash
 from dash import dcc, html, Input, Output
 import plotly.express as px
@@ -14,10 +12,15 @@ import plotly.graph_objects as go
 import random
 import os
 
-# Set seeds for reproducibility
+# 1. Set Python's built-in random module seed
 random.seed(0)
+
+# 2. Set NumPy's random seed
 np.random.seed(0)
+
+# 3. Set TensorFlow's random seed
 tf.random.set_seed(0)
+
 
 # -------------------------------
 # Data Loading and Preprocessing
@@ -34,7 +37,7 @@ data['measurement_time'] = data.groupby(['Location_X', 'Location_Y'])['Timestamp
     lambda x: (x - x.min()).dt.total_seconds()
 )
 
-# Copy data for model usage
+# Copy data for model training
 data['Location_X'] = -data['Location_X']
 df = data.copy()
 
@@ -99,14 +102,59 @@ X = features.drop(['Location_X', 'Location_Y'], axis=1)
 y = features[['Location_X', 'Location_Y']]
 
 # -------------------------------
-# Load Pre-trained Model and Scaler
+# Neural Network Model Training
 # -------------------------------
 
-# Load the trained model
-model = load_model('model.h5')
+# Split the dataset
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
 
-# Load the scaler
-scaler = joblib.load('scaler.joblib')
+# Scale the input features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Build the neural network model
+input_dim = X_train_scaled.shape[1]
+model = models.Sequential([
+    layers.Dense(128, input_dim=input_dim, activation='relu',
+                 kernel_regularizer=regularizers.l2(0.001)),
+    layers.Dropout(0.3),
+    layers.Dense(64, activation='relu',
+                 kernel_regularizer=regularizers.l2(0.001)),
+    layers.Dropout(0.3),
+    layers.Dense(2, activation='linear')  # Output layer for X and Y
+])
+
+# Compile the model
+model.compile(
+    optimizer='adam',
+    loss='mse',
+    metrics=['mae']
+)
+
+# Train the model
+history = model.fit(
+    X_train_scaled,
+    y_train,
+    epochs=100,
+    batch_size=32,
+    validation_split=0.2,
+    callbacks=[
+        tf.keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=10,
+            restore_best_weights=True
+        )
+    ],
+    verbose=1
+)
+
+# Evaluate the model
+test_loss, test_mae = model.evaluate(X_test_scaled, y_test, verbose=2)
+print(f"Test MSE: {test_loss}")
+print(f"Test MAE: {test_mae}")
 
 # -------------------------------
 # Dash Application
@@ -352,21 +400,22 @@ def update_signal_strength(clickData):
     # Displaying Predicted Locations on the Map
     # -------------------------------
     # Find indices in y_test that match the selected location
-    selected_indices = y[
-        (y['Location_X'] == selected_x) &
-        (y['Location_Y'] == selected_y)
+    selected_indices = y_test[
+        (y_test['Location_X'] == selected_x) &
+        (y_test['Location_Y'] == selected_y)
     ].index
 
     if len(selected_indices) == 0:
         prediction_text = "No predictions available for the selected location."
     else:
         # Get the corresponding features
-        X_selected = X.loc[selected_indices]
-        X_selected_scaled = scaler.transform(X_selected)  # Use the loaded scaler
+        X_selected_scaled = X_test_scaled[np.isin(X_test.index, selected_indices)]
+        y_selected_actual = y_test.loc[selected_indices]
+        # Make predictions
         y_pred = model.predict(X_selected_scaled)
         y_pred_df = pd.DataFrame(y_pred, columns=['Predicted_X', 'Predicted_Y'], index=selected_indices)
         # Compare actual vs predicted
-        comparison = pd.concat([y.loc[selected_indices].reset_index(drop=True), y_pred_df.reset_index(drop=True)], axis=1)
+        comparison = pd.concat([y_selected_actual.reset_index(drop=True), y_pred_df.reset_index(drop=True)], axis=1)
         # Calculate error metrics
         mse_x = mean_squared_error(comparison['Location_X'], comparison['Predicted_X'])
         mae_x = mean_absolute_error(comparison['Location_X'], comparison['Predicted_X'])
@@ -395,4 +444,9 @@ def update_signal_strength(clickData):
 
 # Run the Dash app
 if __name__ == '__main__':
-    app.run_server(debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+    app.run_server(
+        debug=False,
+        host='0.0.0.0',
+        port=int(os.environ.get('PORT', 8080))
+    )
+    
