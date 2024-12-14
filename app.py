@@ -26,6 +26,9 @@ tf.random.set_seed(0)
 # 1. Load the dataset
 data = pd.read_csv("wifi_scan_results.csv")
 
+# Drop rows with SSID 'L2G'
+data = data[data['SSID'] != 'L2G'].copy()  # Added line to drop 'L2G' SSID
+
 # Convert 'Timestamp' to datetime
 data['Timestamp'] = pd.to_datetime(data['Timestamp'])
 
@@ -248,70 +251,93 @@ def update_signal_strength(clickData):
         return fig, location_text, map_fig, "No prediction available."
 
     # Calculate average RSSI per measurement_time for the specific BSSIDs
-    rssi_over_time = filtered_data.groupby(['measurement_time', 'BSSID'])['RSSI (dBm)'].mean().reset_index()
+    rssi_over_time = filtered_data.groupby(['measurement_time', 'BSSID', 'SSID'])['RSSI (dBm)'].mean().reset_index()
 
-    # Create the signal strength plot with two lines
+    # Create BSSID_label column in the format "{BSSID} ({SSID} {frequency})"
+    bssid_to_ssid = filtered_data[['BSSID', 'SSID']].drop_duplicates().set_index('BSSID')['SSID'].to_dict()
+    rssi_over_time['BSSID_label'] = rssi_over_time['BSSID'].apply(
+        lambda bssid: f"{bssid} ({bssid_to_ssid.get(bssid, 'Unknown')} {bssid_freq.get(bssid, 'Unknown')})"
+    )
+
+    # Define color mapping based on BSSID_label
+    # Assuming "70:3A:0E:60:E8:E0" is mapped to pink and "70:3A:0E:60:E8:F0" to green
+    color_discrete_map = {
+        f"{bssid} ({bssid_to_ssid.get(bssid, 'Unknown')} {bssid_freq.get(bssid, 'Unknown')})": "#C71585" if bssid == "70:3A:0E:60:E8:E0" else "green"
+        for bssid in specific_bssids
+    }
+
+    # Create the signal strength plot with two lines using the new BSSID_label
     fig = px.line(
         rssi_over_time,
         x='measurement_time',
         y='RSSI (dBm)',
-        color='BSSID',
+        color='BSSID_label',
         title=f'RSSI Over Time at Location X={selected_x}, Y={selected_y}',
-        labels={'measurement_time': 'Measurement Time (s)', 'RSSI (dBm)': 'RSSI (dBm)', 'BSSID': 'BSSID'},
+        labels={'measurement_time': 'Measurement Time (s)', 'RSSI (dBm)': 'RSSI (dBm)', 'BSSID_label': 'BSSID'},
         template='plotly_dark',
-        color_discrete_map={
-            "70:3A:0E:60:E8:E0": "#C71585",  # Darker pink
-            "70:3A:0E:60:E8:F0": "green"     # Green
-        }
+        color_discrete_map=color_discrete_map
     )
 
     # Set Y-axis range to keep it constant
     fig.update_yaxes(range=[-61, -37])  # Updated Y-axis range
 
-    # Calculate average RSSI per BSSID
-    avg_rssi = rssi_over_time.groupby('BSSID')['RSSI (dBm)'].mean().reset_index()
+    # Calculate average RSSI per BSSID_label
+    avg_rssi = rssi_over_time.groupby('BSSID_label')['RSSI (dBm)'].mean().reset_index()
 
-    # Add average lines as grey dashed lines
+    # Add average lines as grey dashed lines with modified labels
     for _, row in avg_rssi.iterrows():
-        bssid = row['BSSID']
+        bssid_label = row['BSSID_label']
         avg_value = row['RSSI (dBm)']
+        # Extract BSSID from BSSID_label
+        bssid = bssid_label.split(' ')[0]
+        # Create the average label without SSID and frequency, include average value in parenthesis
+        avg_label = f"Avg {bssid} ({avg_value:.1f} dBm)"
         fig.add_trace(
             go.Scatter(
                 x=[rssi_over_time['measurement_time'].min(), rssi_over_time['measurement_time'].max()],
                 y=[avg_value, avg_value],
                 mode='lines',
                 line=dict(dash='dash', color='grey'),
-                name=f"Avg {bssid}"
+                name=avg_label  # Modified label
             )
         )
 
-    # Add annotations for average values near the legend without boxes
-    annotations = []
-    for i, row in avg_rssi.iterrows():
-        bssid = row['BSSID']
-        avg_value = row['RSSI (dBm)']
-        frequency = bssid_freq.get(bssid, "Unknown GHz")
-        annotation_text = f"Avg {frequency}: {avg_value:.1f} dBm"
-        # Position annotations based on user-provided values
-        annotations.append(
-            dict(
-                x=1.5,  # Slightly to the right of the plot
-                y=0.05 - 0.05 * i,  # Vertically spaced
-                xref='paper',
-                yref='paper',
-                text=annotation_text,
-                showarrow=False,
-                align='left',
-                font=dict(color='grey', size=12)
-                # Removed 'bgcolor', 'bordercolor', 'borderwidth', 'borderpad'
-            )
-        )
+    # -------------------------------
+    # Removed Annotations for Average Lines
+    # -------------------------------
+    # The following block of code that adds annotations has been removed:
+    #
+    # # Add annotations for average values near the legend without boxes
+    # annotations = []
+    # for i, row in avg_rssi.iterrows():
+    #     bssid_label = row['BSSID_label']
+    #     avg_value = row['RSSI (dBm)']
+    #     annotation_text = f"Avg: {avg_value:.1f} dBm"
+    #     annotations.append(
+    #         dict(
+    #             x=1.05,  # Slightly to the right of the plot
+    #             y=0.95 - 0.05 * i,  # Vertically spaced
+    #             xref='paper',
+    #             yref='paper',
+    #             text=annotation_text,
+    #             showarrow=False,
+    #             align='left',
+    #             font=dict(color='grey', size=12)
+    #         )
+    #     )
+    #
+    # fig.update_layout(
+    #     annotations=annotations,
+    #     legend=dict(
+    #         ...
+    #     )
+    # )
 
+    # Update layout for better visuals
     fig.update_layout(
-        annotations=annotations,
         legend=dict(
-            x=0.85,
-            y=1,
+            x=0.6,
+            y=1.4,
             traceorder='normal',
             font=dict(
                 family="sans-serif",
@@ -323,7 +349,6 @@ def update_signal_strength(clickData):
         )
     )
 
-    # Update layout for better visuals
     fig.update_layout(hovermode='closest')
 
     location_text = f"Selected Location: X={selected_x}, Y={selected_y}"

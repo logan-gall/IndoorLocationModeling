@@ -4,9 +4,10 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import tensorflow as tf
 from tensorflow.keras import layers, models, regularizers
+from tensorflow.keras.metrics import RootMeanSquaredError
 import joblib  # For saving the scaler
 import random
 import os
@@ -22,6 +23,9 @@ tf.random.set_seed(0)
 
 # 1. Load the dataset
 data = pd.read_csv("wifi_scan_results.csv")
+
+# Drop rows with SSID 'L2G'
+data = data[data['SSID'] != 'L2G'].copy()  # Added line to drop 'L2G' SSID
 
 # Convert 'Timestamp' to datetime
 data['Timestamp'] = pd.to_datetime(data['Timestamp'])
@@ -124,11 +128,11 @@ model = models.Sequential([
     layers.Dense(2, activation='linear')  # Output layer for X and Y
 ])
 
-# Compile the model
+# Compile the model with RMSE and MAE as metrics
 model.compile(
     optimizer='adam',
     loss='mse',
-    metrics=['mae']
+    metrics=['mae', RootMeanSquaredError(name='rmse')]
 )
 
 # Train the model
@@ -149,9 +153,26 @@ history = model.fit(
 )
 
 # Evaluate the model
-test_loss, test_mae = model.evaluate(X_test_scaled, y_test, verbose=2)
-print(f"Test MSE: {test_loss}")
+test_metrics = model.evaluate(X_test_scaled, y_test, verbose=2)
+# The evaluate method returns [loss, mae, rmse] based on the metrics specified
+test_mse = test_metrics[0]
+test_mae = test_metrics[1]
+test_rmse = test_metrics[2]
+
+print(f"Test RMSE: {test_rmse}")
 print(f"Test MAE: {test_mae}")
+
+# Make predictions on the test set
+y_pred = model.predict(X_test_scaled)
+
+# Calculate R² score for each target variable and average them
+r2_x = r2_score(y_test['Location_X'], y_pred[:, 0])
+r2_y = r2_score(y_test['Location_Y'], y_pred[:, 1])
+r2_avg = (r2_x + r2_y) / 2
+
+print(f"Test R² for Location_X: {r2_x}")
+print(f"Test R² for Location_Y: {r2_y}")
+print(f"Average Test R²: {r2_avg}")
 
 # Save the trained model
 model.save('model.h5')
