@@ -1,11 +1,11 @@
-import subprocess
-import re
-import time
-import argparse
-import csv
-from datetime import datetime
-import os
-import logging
+import subprocess  # Allows execution of system commands
+import re          # Provides regular expression matching operations
+import time        # Time-related functions
+import argparse    # Parses command-line arguments
+import csv         # CSV file reading and writing
+from datetime import datetime  # Date and time operations
+import os          # Miscellaneous operating system interfaces
+import logging     # Logging facility for tracking events
 
 def scan_wifi(interface='wlan0'):
     """
@@ -13,10 +13,11 @@ def scan_wifi(interface='wlan0'):
     containing BSSID, SSID, Frequency, RSSI, and Quality for each network.
     """
     try:
-        # Execute the iwlist scan command
+        # Execute the iwlist scan command to get Wi-Fi network information
         scan_output = subprocess.check_output(['sudo', 'iwlist', interface, 'scan'], stderr=subprocess.STDOUT)
-        scan_output = scan_output.decode('utf-8')
+        scan_output = scan_output.decode('utf-8')  # Decode the byte output to string
     except subprocess.CalledProcessError as e:
+        # Log an error if the scan command fails
         logging.error(f"Error scanning Wi-Fi networks: {e.output.decode('utf-8')}")
         return []
 
@@ -27,29 +28,30 @@ def scan_wifi(interface='wlan0'):
     for cell in cells[1:]:  # The first split is irrelevant
         network = {}
         
-        # Extract BSSID
+        # Extract BSSID using regex
         bssid_match = re.search(r'Address: ([\dA-Fa-f:]{17})', cell)
         network['BSSID'] = bssid_match.group(1) if bssid_match else 'N/A'
         
-        # Extract SSID
+        # Extract SSID using regex
         ssid_match = re.search(r'ESSID:"(.*)"', cell)
         network['SSID'] = ssid_match.group(1) if ssid_match else 'Hidden'
         
-        # Extract Frequency
+        # Extract Frequency using regex
         freq_match = re.search(r'Frequency:(\d+\.\d+) GHz', cell)
         network['Frequency (GHz)'] = freq_match.group(1) if freq_match else 'N/A'
         
-        # Extract RSSI (Signal level)
+        # Extract RSSI (Signal level) using regex
         rssi_match = re.search(r'Signal level=([-0-9]+) dBm', cell)
         network['RSSI (dBm)'] = rssi_match.group(1) if rssi_match else 'N/A'
         
-        # Extract Quality
+        # Extract Quality using regex
         quality_match = re.search(r'Quality=(\d+)/(\d+)', cell)
         if quality_match:
             network['Quality'] = f"{quality_match.group(1)}/{quality_match.group(2)}"
         else:
             network['Quality'] = 'N/A'
         
+        # Add the extracted network information to the list
         networks.append(network)
     
     return networks
@@ -87,9 +89,11 @@ def initialize_csv(file_name, headers):
                 writer.writeheader()
                 print(f"CSV file '{file_name}' created with headers.")
         except Exception as e:
+            # Log an error if the CSV file cannot be created
             logging.error(f"Failed to create CSV file '{file_name}': {e}")
             print(f"Failed to create CSV file '{file_name}': {e}")
     else:
+        # Inform the user that data will be appended to existing file
         print(f"CSV file '{file_name}' already exists. Appending data.")
 
 def setup_logging():
@@ -103,8 +107,8 @@ def setup_logging():
     )
 
 def main():
-    setup_logging()
-    args = parse_arguments()
+    setup_logging()  # Initialize logging
+    args = parse_arguments()  # Parse command-line arguments
     interface = args.interface
     scan_interval = args.interval
     location_X = args.location_X
@@ -118,7 +122,7 @@ def main():
     # Initialize CSV file
     initialize_csv(output_file, headers)
 
-    # Calculate the end time
+    # Calculate the end time based on duration
     end_time = time.time() + duration
 
     print(f"Starting Wi-Fi scan on interface '{interface}' every {scan_interval} seconds for {duration} seconds.")
@@ -127,12 +131,14 @@ def main():
 
     try:
         while time.time() < end_time:
-            networks = scan_wifi(interface)
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            networks = scan_wifi(interface)  # Perform Wi-Fi scan
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Current timestamp
             if networks:
+                # Open CSV file in append mode to add scan results
                 with open(output_file, 'a', newline='') as csvfile:
                     writer = csv.DictWriter(csvfile, fieldnames=headers)
                     for net in networks:
+                        # Prepare row data for each network
                         row = {
                             'Timestamp': timestamp,
                             'Location_X': location_X,
@@ -143,18 +149,22 @@ def main():
                             'RSSI (dBm)': net.get('RSSI (dBm)', 'N/A'),
                             'Quality': net.get('Quality', 'N/A')
                         }
-                        writer.writerow(row)
+                        writer.writerow(row)  # Write row to CSV
                 print(f"[{timestamp}] Scan completed. {len(networks)} networks found.")
             else:
+                # Inform the user if no networks were found or an error occurred
                 print(f"[{timestamp}] No networks found or an error occurred.")
             
-            time.sleep(scan_interval)
+            time.sleep(scan_interval)  # Wait for the next scan interval
     except KeyboardInterrupt:
+        # Handle user interruption gracefully
         print("\nWi-Fi scanning stopped by user.")
     except Exception as e:
+        # Log any unexpected errors
         logging.error("An unexpected error occurred", exc_info=True)
         print(f"An unexpected error occurred: {e}")
     finally:
+        # Final message upon completion
         print(f"Scanning session ended. Results saved to '{output_file}'.")
 
 if __name__ == "__main__":
