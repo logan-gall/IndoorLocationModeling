@@ -137,7 +137,7 @@ bssid_freq = {
 # Layout of the Dash app
 app.layout = html.Div([
     html.H1("Wi-Fi Signal Strength Analysis with NN Predictions",
-            style={'textAlign': 'center', 'color': 'white'}),
+            style={'textAlign': 'center', 'color': 'black'}),
     html.Div([
         # Map Graph
         dcc.Graph(
