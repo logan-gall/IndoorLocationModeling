@@ -4,6 +4,8 @@
 
 This project serves as a study on using WiFi signal scans for indoor localization. This project scans WiFi signals, then performs spatiotemporal analysis on the resulting WiFi scan data. A thorough explanation of project methodology can be read in `Report.pdf`
 
+![alt text](project_overview.png)
+
 ## Files
 
 The repository is split up into multiple files, here is the list of files with a brief description.
@@ -18,17 +20,16 @@ This is a WiFi scanning Python script that takes input of the current X Y locati
 
 ### `wifi_scan_results.csv`
 
-This is a results CSV file containing the raw data from the wifi scans performed above. It contains these rows that are used in later data analysis:
+This is a results CSV file containing the raw data from the wifi scans performed above. It contains rows that are used in later data analysis:
 
-| Data Column Name | Description |
-| :---- | :---- |
-| Timestamp | Timestamp of the WiFi data scan |
-| Location\_X | The X coordinate location in the Geocommons local coordinate system |
-| Location\_Y | The Y coordinate location in the Geocommons local coordinate system |
-| BSSID | The unique identifier for the given WiFi network signal. Each individual access point can have multiple BSSID corresponding to a WiFi network and Frequency. |
-| SSID | The WiFi network name associated with the given BSSID, this does not uniquely identify the given wifi signal. |
-| Frequency | The frequency at which the wireless signal is transmitted, a number near either 2.4 GHz or 5.8 GHz. The different frequencies have different physical properties, like how far the signal can travel. |
-| RSSI (dBm) | Received Signal Strength Indicator, measured in dBm. This shows how strong the quality of the WiFi signal is. This value is negative. Lower values mean weaker signal strength. |
+- **Timestamp**: Timestamp of the WiFi data scan.
+- **Location\_X**: The X coordinate location in the Geocommons local coordinate system.
+- **Location\_Y**: The Y coordinate location in the Geocommons local coordinate system.
+- **BSSID**: The unique identifier for the given WiFi network signal. Each individual access point can have multiple BSSID corresponding to a WiFi network and Frequency.
+- **SSID**: The WiFi network name associated with the given BSSID; this does not uniquely identify the given WiFi signal.
+- **Frequency**: The frequency at which the wireless signal is transmitted, a number near either 2.4 GHz or 5.8 GHz. The different frequencies have different physical properties, like how far the signal can travel.
+- **RSSI (dBm)**: Received Signal Strength Indicator, measured in dBm. This shows how strong the quality of the WiFi signal is. This value is negative. Lower values mean weaker signal strength.
+
 
 ### `Data_Analysis.ipynb`
 
