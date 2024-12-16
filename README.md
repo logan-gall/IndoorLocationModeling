@@ -1,6 +1,6 @@
 # Indoor Location Modeling Project
 
-## Logan Gall, gall0487
+## Logan Gall
 
 This project serves as a study on using WiFi signal scans for indoor localization. This project scans WiFi signals, then performs spatiotemporal analysis on the resulting WiFi scan data. A thorough explanation of project methodology can be read in `Report.pdf`
 
