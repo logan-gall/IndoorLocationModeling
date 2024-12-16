@@ -2,10 +2,7 @@
 
 ## Logan Gall, gal0487
 
-This project serves as a study on using WiFi signal scans for indoor localization. This project scans WiFi singals, then performs spatiotemporal analysis on the resulting WiFi scan data. A thorough explination of project methodology can be read in `Report.pdf`
-
-![alt text](project_overview.png)
-
+This project serves as a study on using WiFi signal scans for indoor localization. This project scans WiFi signals, then performs spatiotemporal analysis on the resulting WiFi scan data. A thorough explanation of project methodology can be read in `Report.pdf`
 
 ## Files
 
@@ -13,7 +10,7 @@ The repository is split up into multiple files, here is the list of files with a
 
 ### `Report.pdf`
 
-This is the report of this project, giving detailed explination of the project goals and deliverables.
+This is the report of this project, giving detailed explanation of the project goals and deliverables.
 
 ### `wifi_scanner.py`
 
@@ -61,7 +58,7 @@ This is a program that creates an interactive plot of the best neural network mo
 
 ### `dockerfile`, `cloudbuild.yaml`, `requirements.txt`
 
-These are required files in order to host the github repository as a Google Cloud Run web applicaiton. This web application can be accessed by going to https://z.umn.edu/IndoorLocationTrackingModel or https://indoorlocationmodeling-559928205854.us-central1.run.app/ . This website may take a few minutes to load intially, as it has to read the model file and load data.
+These are required files in order to host the github repository as a Google Cloud Run web application. This web application can be accessed by going to https://z.umn.edu/IndoorLocationTrackingModel or https://indoorlocationmodeling-559928205854.us-central1.run.app/ . This website may take a few minutes to load initially, as it has to read the model file and load data.
 
 ## Acknowledgements
 

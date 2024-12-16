@@ -206,7 +206,7 @@ def update_signal_strength(clickData):
             labels={'Location_X': 'Location X', 'Location_Y': 'Location Y'},
             hover_data={'Location_X': True, 'Location_Y': True},
             template='plotly_dark',
-            color_discrete_sequence=['#C71585']  # Darker pink for actual locations
+            color_discrete_sequence=['green']  # Darker pink for actual locations
         )
         return fig, "No location selected.", map_fig, ""
 
@@ -236,15 +236,15 @@ def update_signal_strength(clickData):
             labels={'Location_X': 'Location X', 'Location_Y': 'Location Y'},
             hover_data={'Location_X': True, 'Location_Y': True},
             template='plotly_dark',
-            color_discrete_sequence=['#C71585']  # Darker pink for actual locations
+            color_discrete_sequence=['green']  # Darker pink for actual locations
         )
-        # Highlight selected location using graph_objects with green 'X'
+        # Highlight selected location using graph_objects with red 'X'
         map_fig.add_trace(
             go.Scatter(
                 x=[selected_x],
                 y=[selected_y],
                 mode='markers',
-                marker=dict(color='green', size=12, symbol='x'),  # Green 'X'
+                marker=dict(color='red', size=12, symbol='x'),  #red 'X'
                 name='Selected Location'
             )
         )
@@ -262,7 +262,7 @@ def update_signal_strength(clickData):
     # Define color mapping based on BSSID_label
     # Assuming "70:3A:0E:60:E8:E0" is mapped to pink and "70:3A:0E:60:E8:F0" to green
     color_discrete_map = {
-        f"{bssid} ({bssid_to_ssid.get(bssid, 'Unknown')} {bssid_freq.get(bssid, 'Unknown')})": "#C71585" if bssid == "70:3A:0E:60:E8:E0" else "green"
+        f"{bssid} ({bssid_to_ssid.get(bssid, 'Unknown')} {bssid_freq.get(bssid, 'Unknown')})": "#03b6fc" if bssid == "70:3A:0E:60:E8:E0" else "green"
         for bssid in specific_bssids
     }
 
@@ -302,37 +302,6 @@ def update_signal_strength(clickData):
             )
         )
 
-    # -------------------------------
-    # Removed Annotations for Average Lines
-    # -------------------------------
-    # The following block of code that adds annotations has been removed:
-    #
-    # # Add annotations for average values near the legend without boxes
-    # annotations = []
-    # for i, row in avg_rssi.iterrows():
-    #     bssid_label = row['BSSID_label']
-    #     avg_value = row['RSSI (dBm)']
-    #     annotation_text = f"Avg: {avg_value:.1f} dBm"
-    #     annotations.append(
-    #         dict(
-    #             x=1.05,  # Slightly to the right of the plot
-    #             y=0.95 - 0.05 * i,  # Vertically spaced
-    #             xref='paper',
-    #             yref='paper',
-    #             text=annotation_text,
-    #             showarrow=False,
-    #             align='left',
-    #             font=dict(color='grey', size=12)
-    #         )
-    #     )
-    #
-    # fig.update_layout(
-    #     annotations=annotations,
-    #     legend=dict(
-    #         ...
-    #     )
-    # )
-
     # Update layout for better visuals
     fig.update_layout(
         legend=dict(
@@ -362,16 +331,16 @@ def update_signal_strength(clickData):
         labels={'Location_X': 'Location X', 'Location_Y': 'Location Y'},
         hover_data={'Location_X': True, 'Location_Y': True},
         template='plotly_dark',
-        color_discrete_sequence=['#C71585']  # Darker pink for actual locations
+        color_discrete_sequence=['green']  # green for actual locations
     )
 
-    # Highlight selected location using graph_objects with green 'X'
+    # Highlight selected location using graph_objects with red 'X'
     map_fig.add_trace(
         go.Scatter(
             x=[selected_x],
             y=[selected_y],
             mode='markers',
-            marker=dict(color='green', size=12, symbol='x'),  # Green 'X'
+            marker=dict(color='red', size=12, symbol='x'),  # red 'X'
             name='Selected Location'
         )
     )
@@ -411,7 +380,7 @@ def update_signal_strength(clickData):
                 x=y_pred_df['Predicted_X'],
                 y=y_pred_df['Predicted_Y'],
                 mode='markers',
-                marker=dict(color='pink', size=8, symbol='circle'),  # Pink circles
+                marker=dict(color='#03b6fc', size=8, symbol='circle'),  # Pink circles
                 name='Predicted Locations',
                 hoverinfo='text',
                 text=[f"Predicted Location: X={px_x:.2f}, Y={px_y:.2f}"
