@@ -62,4 +62,4 @@ These are required files in order to host the github repository as a Google Clou
 
 ## Acknowledgements
 
-The code for this project was created with the assistance of Generative AI (ChatGPT).
+The code for this project was created with the assistance of Generative AI (ChatGPT). 
